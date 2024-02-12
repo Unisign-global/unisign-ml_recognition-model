@@ -2,17 +2,25 @@ import cv2
 import mediapipe as mp
 import time
 import json
+import os
+import numpy as np
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
 mp_drawing = mp.solutions.drawing_utils
 
+
 cap = cv2.VideoCapture(0)
 prev_frame = None
 motion_threshold = 5000
-start_time = time.time()
 record_duration = 5
 data = []
+frame_count = 0
+
+input_for_sample_character = input("Enter character: ")
+if not os.path.exists(f'hand_images/{input_for_sample_character}'):
+    os.makedirs(f'hand_images/{input_for_sample_character}')
+start_time = time.time()
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -36,6 +44,11 @@ while cap.isOpened():
                     mp_drawing.draw_landmarks(
                         frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
+                    white_background = 255 * np.ones_like(frame_rgb)
+
+                    mp_drawing.draw_landmarks(
+                        white_background, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
                     hand_coordinates = []
                     for landmark in hand_landmarks.landmark:
                         x = int(landmark.x * frame.shape[1])
@@ -53,6 +66,10 @@ while cap.isOpened():
                         }
                         temp_data.append(landmark_dictionary)
                     data.append(temp_data)
+
+                    cv2.imwrite(
+                        f'hand_images/{input_for_sample_character}/frame_{frame_count}_{time.time()}.jpg', white_background)
+                    frame_count += 1
 
     cv2.imshow('Vector Mapping Window', frame)
     prev_frame = frame_rgb.copy()
